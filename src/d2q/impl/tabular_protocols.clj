@@ -10,7 +10,7 @@
   (tr-name [this])
   (resolve-table [this qctx f+args o+is]))
 
-(defprotocol IEngine
+(defprotocol IServer
   (transform-entities [this qctx query o+is])
   (field-by-name [this field-name]))
 

@@ -68,6 +68,18 @@
              ~e (aget a# i#)]
          ~@body))))
 
+(defn obj-array-with
+  "Creates an n-sized array of Objects filled with initial value init-v"
+  [n init-v]
+  (let [a (object-array n)
+        l (alength a)]
+    (loop  [idx 0]
+      (if (< idx l)
+        (do
+          (aset a idx init-v)
+          (recur (unchecked-inc-int idx)))
+        a))))
+
 (comment
   (vec
     (amap-indexed [[i e] (to-array (range 10))]
@@ -75,4 +87,18 @@
   => [[0 0] [1 -1] [2 -2] [3 -3] [4 -4] [5 -5] [6 -6] [7 -7] [8 -8] [9 -9]]
   )
 
+
+(defn get-safe*
+  [m k map-expr]
+  (if (contains? m k)
+    (get m k)
+    (throw (ex-info
+             (str "Missing key " (pr-str k) " in " (pr-str map-expr))
+             {:map-expr map-expr
+              :m m
+              :k k}))))
+
+(defmacro get-safe
+  [m k]
+  `(get-safe* ~m ~k (quote ~m)))
 
