@@ -18,6 +18,7 @@
 ;; 8. √ Early subquery substitution
 ;; 9. Support union queries ?
 ;; 10. Field meta
+;; 11. Post process entities e.g have a function (ent-cell, result-map) -> result-map
 
 ;; ------------------------------------------------------------------------------
 ;; Server-side API
@@ -120,10 +121,10 @@
   2. By default, the Transform Entities phase is implemented by #'d2q.api/default-transform-entities-fn, which simply
   conveys the Entity Selection it receives without adding any errors or early results."
   [{:as opts
-    :keys [:d2q.server/fields
-           :d2q.server/resolvers
-           :d2q.server/transform-entities-fn]
-    :or {transform-entities-fn default-transform-entities-fn}}]
+    :keys [d2q.server/fields
+           d2q.server/resolvers
+           d2q.server/transform-entities-fn]
+    :or {d2q.server/transform-entities-fn default-transform-entities-fn}}]
   ;; TODO validation (Val, 07 Apr 2018)
   (d2q.impl/server resolvers fields transform-entities-fn))
 
@@ -249,90 +250,3 @@
   [svr qctx q ents]
   (d2q.impl/query svr qctx q ents))
 
-
-
-
-(comment
-  ;; FIXME DEPRECATED
-
-
-  ;; IMPROVEMENT maybe we can let the client express than some field is required etc. (Val, 30 May 2017)
-  (defn normalize-query-field
-    [f]
-    (as-> f f
-      (if (map? f)
-        f
-        {:d2q.fcall/field f})
-
-      (update f
-        :d2q.fcall/key
-        #(or % (:d2q.fcall/field f)))
-
-      (if-let [nested (:d2q.fcall/nested f)]
-        (assoc f :d2q.fcall/nested (into [] (map normalize-query-field) nested))
-        f)))
-
-
-  (defn normalize-query
-    [pull-spec]
-    (into [] (map normalize-query-field) pull-spec))
-
-  (defn query-engine
-    "Compiles tabular field resolvers + fields specs + entity-transformation fn to a function for computing demand-driven queries.
-    The returned function has signature [qctx, q, obj] -> Deferred<query-result>"
-    [tabular-resolvers
-     fields
-     transform-entities-fn                                  ;; TODO find a better name for this step (Val, 17 Mar 2018)
-     ]
-    (let [eng (d2q.impl/server tabular-resolvers fields transform-entities-fn)]
-      (fn query [qctx q obj]
-        (let [query (normalize-query q)]
-          (d2q.impl/query eng qctx query obj)))))
-
-  ;; ------------------------------------------------------------------------------
-  ;; Generalization of the Fields-resolver model
-
-  (defn tabular-resolver-from-field-resolvers
-    [tr-name fields]
-    {:d2q.resolver/name tr-name
-     :d2q.resolver/compute
-     (let [frs-by-field-name (impl.utils/index-and-map-by
-                               :d2q.field/name
-                               :bs.d2q.field/compute
-                               fields)]
-       (fn resolve-table [qctx f+args o+is]
-         (mfd/future
-           (let [fs (->> f+args
-                      (mapv (fn [[k field-name args]]
-                              (let [compute-fn (or
-                                                 (frs-by-field-name field-name)
-                                                 (throw (ex-info
-                                                          (str "No field with name " (pr-str field-name)
-                                                            " is supported by tabular resolver " (pr-str tr-name))
-                                                          {:d2q.fcall/field field-name
-                                                           :d2q.fcall/args args
-                                                           :d2q.resolver/name tr-name})))]
-                                [k compute-fn args field-name]))))]
-             (into []
-               (remove nil?)
-               (for [[obj i] o+is
-                     [k compute-fn args field-name] fs]
-                 (let [v (try
-                           ;; TODO use deps argument ? (Val, 16 Nov 2017)
-                           (compute-fn qctx obj nil args)
-                           (catch Throwable err
-                             (throw
-                               (ex-info
-                                 (str
-                                   "Field Resolver for key " (pr-str (:d2q.fcall/key k))
-                                   " failed with " (pr-str (type err))
-                                   " : " (.getMessage err))
-                                 (merge
-                                   {:q-field {:d2q.fcall/field field-name
-                                              :d2q.fcall/key k
-                                              :d2q.fcall/args args}
-                                    :d2q.error/type :d2q.error.type/field-resolver-failed-to-compute}
-                                   (ex-data err))
-                                 err))))]
-                   (when (some? v)
-                     [i k v]))))))))}))

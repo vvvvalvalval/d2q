@@ -225,6 +225,49 @@
      :d2q.server/resolvers synthetic-resolvers
      :d2q.server/transform-entities-fn synthetic-transform-entities}))
 
+
+[{:special/some-video
+  [{:comments [:comment/title]}]}]
+
+{:d2q-query-fcalls                                          ;; [nil]
+ [{:d2q-fcall-field :special/some-video
+   :d2q-fcall-subquery
+   {:d2q-query-fcalls                                       ;; [{:video/id "fjdslfjdlsk}]
+    [{:d2q-fcall-field :comments
+      :d2q-fcall-subquery
+      [:comment/title]}]}}]}
+
+( env
+  [[0 {:video/id "fdksfjdslkfjds"}]]
+  [[0 {:d2q-fcall-field :comments
+       :d2q-fcall-subquery
+       [:comment/title]}]])
+=>
+(mfd/success-deferred
+  [[0 0 [{:comment/id "jfkdslfjdls"} {:comment/id "dsfjdsflsdkfjs"}]]])
+
+(defn resolve-vieo-comments
+  [env i+fcalls j+ents]
+  (mfd/future
+    ))
+
+
+:comment/description
+:comment/title
+:comment/date
+(defn resolve-comments-fields
+  [env i+fcalls j+ents]
+  (mfd/future
+    (d/q
+      '[:find ?i ?j ?v :in [[?i ?attr]] [[?j ?comment]]
+        :where
+        [?comment ?attr ?v]]
+      (:db env)
+      i+fcalls
+      j+ents)))
+
+
+
 (fact "Synthetic query example"
   (let [qctx nil
         q [:synth.fields/ent-id

@@ -112,8 +112,12 @@
                                (fn [fc]
                                  (let [field
                                        ;; TODO catch unknown Field error (Val, 06 Apr 2018)
-                                       (tp/field-by-name svr (:d2q-fcall-field fc))]
-                                   (tp/field-table-resolver field)))
+                                       (tp/field-by-name svr (:d2q-fcall-field fc))
+                                       ]
+                                   (try (tp/field-table-resolver field)
+                                        (catch Throwable err
+                                          (sc.api/spy )
+                                          (throw err)))))
                                fcalls))]
                        (->
                          (->> by-fr
@@ -150,7 +154,8 @@
                (into []
                  (map-indexed
                    (fn [fcall-i fcall]
-                     [fcall-i fcall]))
+                     (let [field (tp/field-by-name svr (:d2q-fcall-field fcall))]
+                       [fcall-i fcall (tp/field-meta field)])))
                  fcalls))]
          (-> (resolve-table-safe resolver qctx fcall-tuples t-ent-sel)
            (mfd/chain
@@ -243,7 +248,6 @@
                                         (fn enrich-resolver-error [err]
                                           (let [exdata (ex-data err)
                                                 fcall (when-some [d2q-fcall-i (:d2q-fcall-i exdata)]
-                                                        (sc.api/spy)
                                                         (get fcalls d2q-fcall-i))]
                                             (ex-info
                                               (str
@@ -429,13 +433,13 @@
     (f qctx f+args o+is)))
 
 (defrecord Field
-  [fieldName isScalar isMany tr]
+  [fieldName isScalar isMany tr fieldMeta]
   tp/IField
   (field-name [this] fieldName)
   (field-scalar? [this] isScalar)
   (field-many? [this] isMany)
   (field-table-resolver [this] tr)
-  )
+  (field-meta [this] fieldMeta))
 
 (deftype Server
   [fieldByNames transformEntitiesFn #_resolveAccessLevelsFn]
@@ -467,7 +471,7 @@
                                   (str "Unregistered resolver " (pr-str (:d2q.field/resolver field-spec))
                                     " referenced in field " (:d2q.field/name field-spec))
                                   {:field field-spec}))))
-                   )))
+                   (:d2q.field/meta field-spec))))
           (impl.utils/index-by :fieldName))]
     (->Server fields-by-name transform-entities-fn)))
 

@@ -4,7 +4,8 @@
   (field-name [this])
   (field-scalar? [this])
   (field-many? [this])
-  (field-table-resolver [this]))
+  (field-table-resolver [this])
+  (field-meta [this]))
 
 (defprotocol ITabularResolver
   (tr-name [this])
