@@ -82,9 +82,11 @@
   (letfn
     [(query* [svr, qctx, query, ent-sel
               q-trace]
-       (let [query-q-trace (cons [:d2q.trace.op/query
-                                  ;; NOTE elision to get better REPL output
-                                  (assoc query :d2q-query-fcalls [:...elided])] q-trace)
+       (assert (list? q-trace))
+       (let [query-q-trace (conj q-trace
+                             [:d2q.trace.op/query
+                              ;; NOTE elision to get better REPL output
+                              (assoc query :d2q-query-fcalls [:...elided])])
              n-ents (count ent-sel)]
          (if (zero? n-ents)
            (mfd/success-deferred {:d2q-results [] :d2q-errors []})
@@ -116,7 +118,6 @@
                                        ]
                                    (try (tp/field-table-resolver field)
                                         (catch Throwable err
-                                          (sc.api/spy )
                                           (throw err)))))
                                fcalls))]
                        (->
@@ -145,10 +146,11 @@
      (apply-resolver
        [svr qctx t-ent-sel resolver fcalls
         q-trace]
+       (assert (list? q-trace))
        (let [resolver-q-trace
-             (cons
-               [:d2q.trace.op/resolver {:d2q.resolver/name (tp/tr-name resolver)}]
-               q-trace)
+             (conj
+               q-trace
+               [:d2q.trace.op/resolver {:d2q.resolver/name (tp/tr-name resolver)}])
              fcall-tuples
              (p :fcall-tuples
                (into []
@@ -269,12 +271,12 @@
                    (map (fn [[^ArrayList res-cells, field, fcall]]
                           (let [fck (:d2q-fcall-key fcall)
                                 subq (:d2q-fcall-subquery fcall)
-                                fc-q-stack (cons
+                                fc-q-stack (conj
+                                             resolver-q-trace
                                              [:d2q.trace.op/field-call
                                               ;; NOTE elision to get better REPL output (Val, 10 Apr 2018)
                                               (assoc fcall
-                                                :d2q-fcall-subquery [:...elided])]
-                                             resolver-q-trace)]
+                                                :d2q-fcall-subquery [:...elided])])]
                             (if (tp/field-many? field)
                               ;; to-many case
                               (let [subsel

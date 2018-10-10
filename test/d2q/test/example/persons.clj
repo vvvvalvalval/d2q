@@ -45,7 +45,7 @@
 ;; or ElasticSearch.
 
 ;; We will build a d2q Query Server which serves the following Fields,
-;; which names should be most self-explanaroty:
+;; which names should be most self-explanatory:
 
 #{:myapp.persons/person-of-id
   :myapp.person/id
@@ -535,3 +535,4 @@
        :d2q.resolver/compute #'resolve-person-parents}
       {:d2q.resolver/name :myapp.resolvers/person-children
        :d2q.resolver/compute #'resolve-person-children}]}))
+

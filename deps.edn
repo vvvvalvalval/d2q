@@ -1,0 +1,14 @@
+{:deps
+ {org.clojure/clojure {:mvn/version "1.8.0"}
+  manifold {:mvn/version "0.1.6"}
+
+  com.taoensso/tufte {:mvn/version "1.4.0"}                 ;; FIXME
+  }
+ :aliases
+ {:dev
+  {:extra-deps
+   {midje {:mvn/version "1.7.0"}
+    vvvvalvalval/scope-capture {:mvn/version "0.1.4"}
+    vvvvalvalval/scope-capture-nrepl {:mvn/version "0.2.0"}
+    criterium {:mvn/version "0.4.4"}
+    vvvvalvalval/supdate {:mvn/version "0.2.1"}}}}}

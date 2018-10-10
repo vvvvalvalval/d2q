@@ -12,13 +12,14 @@
 ;; 2. √ Subquery preview in resolvers? May require to change the format of resolvers.
 ;; 3. √ Partial errors => resolvers return a map with {:data :errors} key
 ;; 4. Maybe skip the normalization of query - should be done by the caller
-;; 5. Mutual recursion (requires to change the query format)
+;; 5. Mutual recursion (requires to change the query format - but how? specified at the Field Call or the Query ?)
 ;; 6. Source mapping - keep track of (reversed) query-path and data-path
 ;; 7. √ Maybe faster processing via records ?
 ;; 8. √ Early subquery substitution
-;; 9. Support union queries ?
+;; 9. Support Conditional Queries ? - dispatch based on an attribute, applying queries that will be applied only to a subset of the entities
 ;; 10. Field meta
 ;; 11. Post process entities e.g have a function (ent-cell, result-map) -> result-map
+;; 12. 'Flattening' / 'merging' for cardinality-one, ref-typed attributes
 
 ;; ------------------------------------------------------------------------------
 ;; Server-side API
