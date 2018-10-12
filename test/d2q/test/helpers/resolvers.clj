@@ -23,10 +23,10 @@
       tu/errors->ex-data)
 
     =>
-    '{:d2q-res-cells [#d2q/result-cell{:d2q-entcell-i 0, :d2q-fcall-i 0, :d2q-rescell-value -1/2}
-                      #d2q/result-cell{:d2q-entcell-i 1, :d2q-fcall-i 0, :d2q-rescell-value -1}
-                      #d2q/result-cell{:d2q-entcell-i 3, :d2q-fcall-i 0, :d2q-rescell-value 1}
-                      #d2q/result-cell{:d2q-entcell-i 4, :d2q-fcall-i 0, :d2q-rescell-value 1/2}],
+    '{:d2q-res-cells [#d2q/result-cell{:d2q-entcell-j 0, :d2q-fcall-i 0, :d2q-rescell-value -1/2}
+                      #d2q/result-cell{:d2q-entcell-j 1, :d2q-fcall-i 0, :d2q-rescell-value -1}
+                      #d2q/result-cell{:d2q-entcell-j 3, :d2q-fcall-i 0, :d2q-rescell-value 1}
+                      #d2q/result-cell{:d2q-entcell-j 4, :d2q-fcall-i 0, :d2q-rescell-value 1/2}],
       :d2q-errors [{:error/type clojure.lang.ExceptionInfo,
                     :error/message "aaaaaarrrrg",
                     :error/data {:n 0},
@@ -49,10 +49,10 @@
           (range -2 3)))
       tu/errors->ex-data)
     =>
-    '{:d2q-res-cells [#d2q/result-cell{:d2q-entcell-i 0, :d2q-fcall-i 0, :d2q-rescell-value -1/2}
-                      #d2q/result-cell{:d2q-entcell-i 1, :d2q-fcall-i 0, :d2q-rescell-value -1}
-                      #d2q/result-cell{:d2q-entcell-i 3, :d2q-fcall-i 0, :d2q-rescell-value 1}
-                      #d2q/result-cell{:d2q-entcell-i 4, :d2q-fcall-i 0, :d2q-rescell-value 1/2}],
+    '{:d2q-res-cells [#d2q/result-cell{:d2q-entcell-j 0, :d2q-fcall-i 0, :d2q-rescell-value -1/2}
+                      #d2q/result-cell{:d2q-entcell-j 1, :d2q-fcall-i 0, :d2q-rescell-value -1}
+                      #d2q/result-cell{:d2q-entcell-j 3, :d2q-fcall-i 0, :d2q-rescell-value 1}
+                      #d2q/result-cell{:d2q-entcell-j 4, :d2q-fcall-i 0, :d2q-rescell-value 1/2}],
       :d2q-errors [{:error/type clojure.lang.ExceptionInfo,
                     :error/message "aaaaaarrrrg",
                     :error/data {:n 0},
@@ -87,10 +87,10 @@
         [20 :entity-2]])
     tu/errors->ex-data
     (supd/supdate {:d2q-res-cells set}))
-  => '{:d2q-res-cells #{#d2q/result-cell{:d2q-entcell-i 20, :d2q-fcall-i 1, :d2q-rescell-value 2.0}
-                        #d2q/result-cell{:d2q-entcell-i 20, :d2q-fcall-i 0, :d2q-rescell-value 0.0}
-                        #d2q/result-cell{:d2q-entcell-i 10, :d2q-fcall-i 0, :d2q-rescell-value 0.0}
-                        #d2q/result-cell{:d2q-entcell-i 10, :d2q-fcall-i 1, :d2q-rescell-value 2.0}},
+  => '{:d2q-res-cells #{#d2q/result-cell{:d2q-entcell-j 20, :d2q-fcall-i 1, :d2q-rescell-value 2.0}
+                        #d2q/result-cell{:d2q-entcell-j 20, :d2q-fcall-i 0, :d2q-rescell-value 0.0}
+                        #d2q/result-cell{:d2q-entcell-j 10, :d2q-fcall-i 0, :d2q-rescell-value 0.0}
+                        #d2q/result-cell{:d2q-entcell-j 10, :d2q-fcall-i 1, :d2q-rescell-value 2.0}},
        :d2q-errors [{:error/type clojure.lang.ExceptionInfo,
                      :error/message "Failed to take square root of -1.0",
                      :error/data {:d2q-fcall-i 2},

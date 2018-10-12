@@ -95,18 +95,18 @@
         [1 (->SynthEnt "b")]])
     tu/errors->ex-data)
   =>
-  '{:d2q-res-cells [#d2q/result-cell{:d2q-entcell-i 0, :d2q-fcall-i 0, :d2q-rescell-value "a"}
-                    #d2q/result-cell{:d2q-entcell-i 1, :d2q-fcall-i 0, :d2q-rescell-value "b"}
-                    #d2q/result-cell{:d2q-entcell-i 0, :d2q-fcall-i 1, :d2q-rescell-value "hello"}
-                    #d2q/result-cell{:d2q-entcell-i 1, :d2q-fcall-i 1, :d2q-rescell-value "hello"}
-                    #d2q/result-cell{:d2q-entcell-i 0,
+  '{:d2q-res-cells [#d2q/result-cell{:d2q-entcell-j 0, :d2q-fcall-i 0, :d2q-rescell-value "a"}
+                    #d2q/result-cell{:d2q-entcell-j 1, :d2q-fcall-i 0, :d2q-rescell-value "b"}
+                    #d2q/result-cell{:d2q-entcell-j 0, :d2q-fcall-i 1, :d2q-rescell-value "hello"}
+                    #d2q/result-cell{:d2q-entcell-j 1, :d2q-fcall-i 1, :d2q-rescell-value "hello"}
+                    #d2q/result-cell{:d2q-entcell-j 0,
                                      :d2q-fcall-i 2,
                                      :d2q-rescell-value #d2q.test.api.SynthEnt{:ent-id "a/a"}}
-                    #d2q/result-cell{:d2q-entcell-i 1,
+                    #d2q/result-cell{:d2q-entcell-j 1,
                                      :d2q-fcall-i 2,
                                      :d2q-rescell-value #d2q.test.api.SynthEnt{:ent-id "b/a"}}
-                    #d2q/result-cell{:d2q-entcell-i 0, :d2q-fcall-i 5, :d2q-rescell-value :qctx}
-                    #d2q/result-cell{:d2q-entcell-i 1, :d2q-fcall-i 5, :d2q-rescell-value :qctx}],
+                    #d2q/result-cell{:d2q-entcell-j 0, :d2q-fcall-i 5, :d2q-rescell-value :qctx}
+                    #d2q/result-cell{:d2q-entcell-j 1, :d2q-fcall-i 5, :d2q-rescell-value :qctx}],
     :d2q-errors [{:error/type clojure.lang.ExceptionInfo, :error/message "", :error/data {:error-tag "FZDSgjeizo"}}
                  {:error/type clojure.lang.ExceptionInfo, :error/message "", :error/data {:error-tag "FZDSgjeizo"}}]}
 
@@ -223,7 +223,7 @@
                (let [err (ex-info msg data)]
                  {:d2q-errors err})
                (if-let [res (:synth.ent/early-result ent)]
-                 {:d2q-early-results {:d2q-entcell-i ent-i :d2q-rescell-value res}}
+                 {:d2q-early-results {:d2q-entcell-j ent-i :d2q-rescell-value res}}
                  {:d2q-ent-selection cell}))))
       (reduce
         #(merge-with conj %1 %2)

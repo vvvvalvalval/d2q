@@ -21,7 +21,7 @@
 ;; Resolvers datatypes
 
 (defrecord ResultCell
-  [^int d2q-entcell-i
+  [^int d2q-entcell-j
    ^int d2q-fcall-i
    d2q-rescell-value])
 

@@ -38,7 +38,7 @@
   resolver-fn must be a function with arguments [qctx i+fcalls]
   (like an ordinary Resolver function, without the last j+entities argument),
   and returns the same results as an ordinary
-  resolver function, with dummy values for :d2q-entcell-i in Result Cells (typically -1 or nil).
+  resolver function, with dummy values for :d2q-entcell-j in Result Cells (typically -1 or nil).
   Each Result Cell returned by resolver-fn will be repeated once per input Entity."
   [resolver-fn]
   (fn [qctx i+fcalls j+entities]
@@ -53,7 +53,7 @@
                   (->> js
                     (mapv
                       (fn [j]
-                        (assoc partial-res-cell :d2q-entcell-i j))))))
+                        (assoc partial-res-cell :d2q-entcell-j j))))))
               res-cells)))))))
 
 (defn fields-independent-resolver
@@ -168,7 +168,7 @@
                                      " To fix, make sure your `check-entity` function is correct, "
                                      " and that the upstream Resolver returns valid Entities."
                                      " See the cause of this Exception for details.")
-                                   {:d2q-entcell-i j}
+                                   {:d2q-entcell-j j}
                                    err)])))))
             first second
             j+entities)]

@@ -358,15 +358,15 @@
          [3 (->Person "non-existing-person")]]]
     @(resolve-person-fields qctx i+fcalls j+entities))
   =>
-  {:d2q-res-cells [#d2q/result-cell{:d2q-entcell-i 1, :d2q-fcall-i -1, :d2q-rescell-value "luke-skywalker"}
-                   #d2q/result-cell{:d2q-entcell-i 1, :d2q-fcall-i -2, :d2q-rescell-value "Luke"}
-                   #d2q/result-cell{:d2q-entcell-i 1, :d2q-fcall-i -3, :d2q-rescell-value "Skywalker"}
-                   #d2q/result-cell{:d2q-entcell-i 1, :d2q-fcall-i -4, :d2q-rescell-value "Luke Skywalker"}
-                   #d2q/result-cell{:d2q-entcell-i 2, :d2q-fcall-i -1, :d2q-rescell-value "padme-amidala"}
-                   #d2q/result-cell{:d2q-entcell-i 2, :d2q-fcall-i -2, :d2q-rescell-value "Padme"}
-                   #d2q/result-cell{:d2q-entcell-i 2, :d2q-fcall-i -3, :d2q-rescell-value "Amidala"}
-                   #d2q/result-cell{:d2q-entcell-i 2, :d2q-fcall-i -4, :d2q-rescell-value "Padme Amidala"}
-                   #d2q/result-cell{:d2q-entcell-i 3, :d2q-fcall-i -4, :d2q-rescell-value " "}]}
+  {:d2q-res-cells [#d2q/result-cell{:d2q-entcell-j 1, :d2q-fcall-i -1, :d2q-rescell-value "luke-skywalker"}
+                   #d2q/result-cell{:d2q-entcell-j 1, :d2q-fcall-i -2, :d2q-rescell-value "Luke"}
+                   #d2q/result-cell{:d2q-entcell-j 1, :d2q-fcall-i -3, :d2q-rescell-value "Skywalker"}
+                   #d2q/result-cell{:d2q-entcell-j 1, :d2q-fcall-i -4, :d2q-rescell-value "Luke Skywalker"}
+                   #d2q/result-cell{:d2q-entcell-j 2, :d2q-fcall-i -1, :d2q-rescell-value "padme-amidala"}
+                   #d2q/result-cell{:d2q-entcell-j 2, :d2q-fcall-i -2, :d2q-rescell-value "Padme"}
+                   #d2q/result-cell{:d2q-entcell-j 2, :d2q-fcall-i -3, :d2q-rescell-value "Amidala"}
+                   #d2q/result-cell{:d2q-entcell-j 2, :d2q-fcall-i -4, :d2q-rescell-value "Padme Amidala"}
+                   #d2q/result-cell{:d2q-entcell-j 3, :d2q-fcall-i -4, :d2q-rescell-value " "}]}
   )
 
 
@@ -397,16 +397,16 @@
     @(resolve-persons-by-ids
        qctx i+fcalls j+entities))
   =>
-  {:d2q-res-cells [#d2q/result-cell{:d2q-entcell-i 1,
+  {:d2q-res-cells [#d2q/result-cell{:d2q-entcell-j 1,
                                     :d2q-fcall-i -1,
                                     :d2q-rescell-value #d2q.test.example.persons.Person{:person-id "luke-skywalker"}}
-                   #d2q/result-cell{:d2q-entcell-i 2,
+                   #d2q/result-cell{:d2q-entcell-j 2,
                                     :d2q-fcall-i -1,
                                     :d2q-rescell-value #d2q.test.example.persons.Person{:person-id "luke-skywalker"}}
-                   #d2q/result-cell{:d2q-entcell-i 1,
+                   #d2q/result-cell{:d2q-entcell-j 1,
                                     :d2q-fcall-i -2,
                                     :d2q-rescell-value #d2q.test.example.persons.Person{:person-id "leia-organa"}}
-                   #d2q/result-cell{:d2q-entcell-i 2,
+                   #d2q/result-cell{:d2q-entcell-j 2,
                                     :d2q-fcall-i -2,
                                     :d2q-rescell-value #d2q.test.example.persons.Person{:person-id "leia-organa"}}]}
   )
@@ -453,17 +453,17 @@
          [2 (->Person "anakin-skywalker")]]]        ;; NOTE has no parents in our DB
     @(resolve-person-parents qctx i+fcalls j+entities))
   =>
-  {:d2q-res-cells [#d2q/result-cell{:d2q-entcell-i 1,
+  {:d2q-res-cells [#d2q/result-cell{:d2q-entcell-j 1,
                                     :d2q-fcall-i -1,
                                     :d2q-rescell-value #d2q.test.example.persons.Person{:person-id "padme-amidala"}}
-                   #d2q/result-cell{:d2q-entcell-i 1,
+                   #d2q/result-cell{:d2q-entcell-j 1,
                                     :d2q-fcall-i -2,
                                     :d2q-rescell-value #d2q.test.example.persons.Person{:person-id "anakin-skywalker"}}
-                   #d2q/result-cell{:d2q-entcell-i 1,
+                   #d2q/result-cell{:d2q-entcell-j 1,
                                     :d2q-fcall-i -3,
                                     :d2q-rescell-value [#d2q.test.example.persons.Person{:person-id "padme-amidala"}
                                                         #d2q.test.example.persons.Person{:person-id "padme-amidala"}]}
-                   #d2q/result-cell{:d2q-entcell-i 2,
+                   #d2q/result-cell{:d2q-entcell-j 2,
                                     :d2q-fcall-i -3,
                                     :d2q-rescell-value []}]}
 
@@ -501,10 +501,10 @@
          [2 (->Person "anakin-skywalker")]]]
     @(resolve-person-children qctx i+fcalls j+entities))
   =>
-  {:d2q-res-cells [#d2q/result-cell{:d2q-entcell-i 1,
+  {:d2q-res-cells [#d2q/result-cell{:d2q-entcell-j 1,
                                     :d2q-fcall-i -1,
                                     :d2q-rescell-value []}
-                   #d2q/result-cell{:d2q-entcell-i 2,
+                   #d2q/result-cell{:d2q-entcell-j 2,
                                     :d2q-fcall-i -1,
                                     :d2q-rescell-value [#d2q.test.example.persons.Person{:person-id "luke-skywalker"}
                                                         #d2q.test.example.persons.Person{:person-id "leia-organa"}]}]}

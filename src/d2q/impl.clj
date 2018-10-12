@@ -222,7 +222,7 @@
                                        ;; scalar-typed case
                                        (d2q.impl.datatypes/->FinalResultCell
                                          scalar-k
-                                         (:d2q-entcell-i rcell) ;; IMPROVEMENT read primitive int for performance (Val, 06 Apr 2018)
+                                         (:d2q-entcell-j rcell) ;; IMPROVEMENT read primitive int for performance (Val, 06 Apr 2018)
                                          (:d2q-rescell-value rcell))))
                                    (catch Throwable err
                                      ;; TODO enrich error with contextual data (Val, 05 Apr 2018)
@@ -322,7 +322,7 @@
                                                          frcell
                                                          (d2q.impl.datatypes/->FinalResultCell
                                                            fck
-                                                           (:d2q-entcell-i parent-cell) ;; IMPROVEMENT read primitive int for performance (Val, 06 Apr 2018)
+                                                           (:d2q-entcell-j parent-cell) ;; IMPROVEMENT read primitive int for performance (Val, 06 Apr 2018)
                                                            (subvec vs offset next-offset))]
                                                      (recur
                                                        (unchecked-inc-int i)
@@ -339,7 +339,7 @@
                                                      frcell
                                                      (d2q.impl.datatypes/->FinalResultCell
                                                        fck
-                                                       (:d2q-entcell-i parent-cell) ;; IMPROVEMENT read primitive int for performance (Val, 06 Apr 2018)
+                                                       (:d2q-entcell-j parent-cell) ;; IMPROVEMENT read primitive int for performance (Val, 06 Apr 2018)
                                                        (subvec vs offset next-offset))]
                                                  (recur
                                                    (next parent-cells)
@@ -367,7 +367,7 @@
                                            (fn [parent-cell child-v]
                                              (d2q.impl.datatypes/->FinalResultCell
                                                fck
-                                               (:d2q-entcell-i parent-cell) ;; IMPROVEMENT read primitive int for performance (Val, 06 Apr 2018)
+                                               (:d2q-entcell-j parent-cell) ;; IMPROVEMENT read primitive int for performance (Val, 06 Apr 2018)
                                                child-v))
                                            res-cells
                                            d2q-results)
@@ -386,7 +386,7 @@
        (let [a-res (object-array n-ents)]
          (impl.utils/doarr-indexed! [[i _] a-res]
            (aset a-res i (transient {})))
-         ;; PERFORMANCE IDEA would it be faster to sort by :d2q-entcell-i first? (Val, 05 Apr 2018)
+         ;; PERFORMANCE IDEA would it be faster to sort by :d2q-entcell-j first? (Val, 05 Apr 2018)
          (transduce
            (comp
              cat
@@ -401,7 +401,7 @@
          (when (seq early-results)
            (reduce
              (fn [_ early-result-cell]
-               (let [i (int (:d2q-entcell-i early-result-cell)) ;; IMPROVEMENT read primitive int for performance (Val, 06 Apr 2018)
+               (let [i (int (:d2q-entcell-j early-result-cell)) ;; IMPROVEMENT read primitive int for performance (Val, 06 Apr 2018)
                      v (:d2q-rescell-value early-result-cell)]
                  (aset a-res i v))
                nil)
@@ -578,7 +578,7 @@
           (let [get-early-result
                 (fn [[i e]]
                   (when-let [res (get (meta e) :myapp/early-result)]
-                    {:d2q-entcell-i i :d2q-rescell-value res}))
+                    {:d2q-entcell-j i :d2q-rescell-value res}))
                 early-results
                 (into []
                   (keep get-early-result)
@@ -941,7 +941,7 @@
   (.write wtr (pr-str (into {} v))))
 
 (defn read-result-cell
-  [{:as m, :keys [:d2q-entcell-i :d2q-fcall-i :d2q-rescell-value]}]
-  {:pre [(integer? d2q-entcell-i) (integer? d2q-fcall-i)]}
-  (d2q.datatypes/->ResultCell d2q-entcell-i d2q-fcall-i d2q-rescell-value))
+  [{:as m, :keys [:d2q-entcell-j :d2q-fcall-i :d2q-rescell-value]}]
+  {:pre [(integer? d2q-entcell-j) (integer? d2q-fcall-i)]}
+  (d2q.datatypes/->ResultCell d2q-entcell-j d2q-fcall-i d2q-rescell-value))
 

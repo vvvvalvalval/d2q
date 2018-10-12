@@ -79,7 +79,7 @@
   In a pseudo type notation, the signature of a :d2q.resolver/compute function would be:
 
   (QCtx, [[FieldCallIndex, FieldCall, FieldMeta]], [[EntityIndex, Entity]])
-  -> manifold.Deferred<{:d2q-res-cells  [{:d2q-entcell-i     EntityIndex,
+  -> manifold.Deferred<{:d2q-res-cells  [{:d2q-entcell-j     EntityIndex,
                                           :d2q-fcall-i       FieldCallIndex,
                                           :d2q-rescell-value V}],
                         :d2q-errors     [Throwable]}>
@@ -119,7 +119,7 @@
   (QCtx, Query, [[EntityIndex, Entity]])
   -> manifold.Deferred<{:d2q-ent-selection [[EntityIndex, Entity]],
                         :d2q-errors        [Throwable]                         ;; TODO inconsistent naming (Val, 07 Apr 2018)
-                        :d2q-early-results [{:d2q-entcell-i     EntityIndex    ;; TODO maybe also use a tuple here? (Val, 07 Apr 2018)
+                        :d2q-early-results [{:d2q-entcell-j     EntityIndex    ;; TODO maybe also use a tuple here? (Val, 07 Apr 2018)
                                              :d2q-rescell-value V}]}>
 
   Notes:
@@ -140,10 +140,10 @@
 (defn result-cell
   "A representation of d2q Result Cells more efficient than using a plain Clojure map.
   Should be called from a d2q Resolver's :d2q.resolver/compute function."
-  [d2q-entcell-i d2q-fcall-i d2q-rescell-value]
-  {:pre [(integer? d2q-entcell-i)
+  [d2q-entcell-j d2q-fcall-i d2q-rescell-value]
+  {:pre [(integer? d2q-entcell-j)
          (integer? d2q-fcall-i)]}
-  (d2q.datatypes/->ResultCell d2q-entcell-i d2q-fcall-i d2q-rescell-value))
+  (d2q.datatypes/->ResultCell d2q-entcell-j d2q-fcall-i d2q-rescell-value))
 
 
 
