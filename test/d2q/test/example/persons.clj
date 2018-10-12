@@ -278,8 +278,8 @@
 
 ;; Some notes:
 ;; 1. It makes no sense for a scalar-typed Field to be called with a :d2q-fcall-subquery.
-;; 2. For scalar-typed attribute, the notion of cardinality makes no sense:
-;; a scalar-typed attribute may compute any type of values (including maps or vectors),
+;; 2. For scalar-typed Field, the notion of cardinality makes no sense:
+;; a scalar-typed Field may compute any type of values (including maps or vectors),
 ;; and the d2q engine won't care.
 
 

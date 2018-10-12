@@ -1,11 +1,8 @@
 (ns d2q.api
   "Demand-driven querying à la GraphQL / Datomic Pull"
-  (:require [clojure.walk]
-            [manifold.deferred :as mfd]
-            [d2q.impl.utils :as impl.utils]
+  (:require [manifold.deferred :as mfd]
             [d2q.impl]
-            [d2q.datatypes])
-  (:import (java.util ArrayList)))
+            [d2q.datatypes]))
 
 ;; TODO improvements (Val, 15 Mar 2018)
 ;; 1. √ Remove specific authorization model - replace by a query-level resolution step

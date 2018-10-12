@@ -2,7 +2,7 @@
  {org.clojure/clojure {:mvn/version "1.8.0"}
   manifold {:mvn/version "0.1.6"}
 
-  com.taoensso/tufte {:mvn/version "1.4.0"}                 ;; FIXME
+  ;com.taoensso/tufte {:mvn/version "1.4.0"}
   }
  :aliases
  {:dev
