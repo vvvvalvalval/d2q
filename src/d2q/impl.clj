@@ -452,28 +452,62 @@
     (get fieldByNames field-name)))
 
 (defn server
-  [tabular-resolvers fields transform-entities-fn]
+  [resolvers fields transform-entities-fn]
   {:pre [(fn? transform-entities-fn)]}
-  (let [trs-by-name (->> tabular-resolvers
+  (let [trs-by-name (->> resolvers
                       (map (fn [resolver-opts]
                              (->TabularResolver
                                (impl.utils/get-safe resolver-opts :d2q.resolver/name)
                                (impl.utils/get-safe resolver-opts :d2q.resolver/compute))))
                       (impl.utils/index-by :name))
+        field-names (into #{}
+                      (map (fn [field-spec] (impl.utils/get-safe field-spec :d2q.field/name)))
+                      fields)
+        field->resolver+meta
+        (let [field->resolver+metas
+              (->> resolvers
+                (mapcat (fn [{:as resolver-opts, res-name :d2q.resolver/name}]
+                          (for [[field-name field-meta] (impl.utils/get-safe resolver-opts :d2q.resolver/field->meta)]
+                            [field-name res-name field-meta])))
+                (reduce
+                  (fn [m [field-name res-name field-meta]]
+                          (update m field-name (fn [v] (-> v (or []) (conj [res-name field-meta])))))
+                  {}))
+              undeclared-fields
+              (->> field->resolver+metas keys (remove field-names) set)
+              non-implemented
+              (->> field-names (remove field->resolver+metas) set)
+              implemented-several-times
+              (->> field->resolver+metas
+                (filter (fn [[_field-name resolver+metas]]
+                          (> (count resolver+metas) 1)))
+                (map (fn [[field-name resolver+metas]]
+                       [field-name (mapv first resolver+metas)]))
+                (into (sorted-map)))]
+          (if-not (and (empty? undeclared-fields) (empty? non-implemented) (empty? implemented-several-times))
+            (throw (ex-info
+                     (str "Each Field must be implemented by exactly one Resolver; found problems with Fields "
+                       (pr-str (into (sorted-set) cat [undeclared-fields non-implemented (keys implemented-several-times)]))
+                       " and Resolvers "
+                       (pr-str (into (sorted-set) cat (vals implemented-several-times))))
+                     {:undeclared-fields (into (sorted-set) undeclared-fields)
+                      :non-implemented-fields (into (sorted-set) non-implemented)
+                      :fields-implemented-by-several-resolvers implemented-several-times}))
+            (->> field->resolver+metas
+              (map (fn [[field-name resolver+meta]]
+                     [field-name (first resolver+meta)]))
+              (into {}))))
         fields-by-name
         (->> fields
           (map (fn [field-spec]
-                 (->Field
-                   (impl.utils/get-safe field-spec :d2q.field/name)
-                   (not (impl.utils/get-safe field-spec :d2q.field/ref?))
-                   (= :d2q.field.cardinality/many (:d2q.field/cardinality field-spec))
-                   (-> field-spec (impl.utils/get-safe :d2q.field/resolver)
-                     trs-by-name
-                     (or (throw (ex-info
-                                  (str "Unregistered resolver " (pr-str (:d2q.field/resolver field-spec))
-                                    " referenced in field " (:d2q.field/name field-spec))
-                                  {:field field-spec}))))
-                   (:d2q.field/meta field-spec))))
+                 (let [field-name (:d2q.field/name field-spec)
+                       [resolver-name field-meta] (get field->resolver+meta field-name)]
+                   (->Field
+                     field-name
+                     (not (impl.utils/get-safe field-spec :d2q.field/ref?))
+                     (= :d2q.field.cardinality/many (:d2q.field/cardinality field-spec))
+                     (get trs-by-name resolver-name)
+                     field-meta))))
           (impl.utils/index-by :fieldName))]
     (->Server fields-by-name transform-entities-fn)))
 

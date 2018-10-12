@@ -10,13 +10,33 @@
       (transient {}) coll)))
 
 (defn index-and-map-by
-  [kf vf coll]
-  (persistent!
-    (reduce (fn [tm v]
-              (assoc! tm
-                (kf v)
-                (vf v)))
-      (transient {}) coll)))
+  ([kf vf coll]
+   (persistent!
+     (reduce (fn [tm v]
+               (assoc! tm
+                 (kf v)
+                 (vf v)))
+       (transient {}) coll))))
+
+(defn group-and-map-by
+  ([kf vf coll]
+   (persistent!
+     (reduce (fn [tm x]
+               (let [k (kf x)
+                     v (vf x)
+                     old-vs (get tm k [])]
+                 (assoc! tm k (conj old-vs v))))
+       (transient {}) coll)))
+  ([xform kf vf coll]
+   (persistent!
+     (transduce
+       xform
+       (completing (fn [tm x]
+                     (let [k (kf x)
+                           v (vf x)
+                           old-vs (get tm k [])]
+                       (assoc! tm k (conj old-vs v)))))
+       (transient {}) coll))))
 
 (defmacro doarr-indexed!
   "Runs an sequence of expressions `body` across an array `a`,

@@ -288,56 +288,45 @@
 ;;;; ****************************************************************
 
 
-
-
 (def fields
   [;; NOTE this Field is ref-typed, cardinality-one, and parameterized
    {:d2q.field/name :myapp.persons/person-of-id
     :doc "Resolves a Person given its :myapp.person/id"
     :d2q.field/ref? true
-    :d2q.field/cardinality :d2q.field.cardinality/one
-    :d2q.field/resolver :myapp.resolvers/person-of-id}
+    :d2q.field/cardinality :d2q.field.cardinality/one}
 
    ;; NOTE the following 4 Fields are scalar-typed, and not parameterized
    {:d2q.field/name :myapp.person/id
     :doc "A unique identifier of this Person"
-    :d2q.field/ref? false
-    :d2q.field/resolver :myapp.resolvers/person-fields}
+    :d2q.field/ref? false}
    {:d2q.field/name :myapp.person/first-name
     :doc "The first name of this Person"
-    :d2q.field/ref? false
-    :d2q.field/resolver :myapp.resolvers/person-fields}
+    :d2q.field/ref? false}
    {:d2q.field/name :myapp.person/last-name
     :doc "The last name of this Person"
-    :d2q.field/ref? false
-    :d2q.field/resolver :myapp.resolvers/person-fields}
+    :d2q.field/ref? false}
    {:d2q.field/name :myapp.person/full-name
     :doc "The full name of this Person, i.e the concatenation of her first and last names"
-    :d2q.field/ref? false
-    :d2q.field/resolver :myapp.resolvers/person-fields}
+    :d2q.field/ref? false}
 
    ;; NOTE the following 4 Fields are ref-typed and not parameterized
    {:d2q.field/name :myapp.person/mother
     :doc "The biological mother of this Person"
     :d2q.field/ref? true
-    :d2q.field/cardinality :d2q.field.cardinality/one
-    :d2q.field/resolver :myapp.resolvers/person-parents}
+    :d2q.field/cardinality :d2q.field.cardinality/one}
    {:d2q.field/name :myapp.person/father
     :doc "The biological father of this Person"
     :d2q.field/ref? true
-    :d2q.field/cardinality :d2q.field.cardinality/one
-    :d2q.field/resolver :myapp.resolvers/person-parents}
+    :d2q.field/cardinality :d2q.field.cardinality/one}
    {:d2q.field/name :myapp.person/parents
     :doc "The biological parents of this Person (mother then father when both are known)"
     :d2q.field/ref? true
-    :d2q.field/cardinality :d2q.field.cardinality/many
-    :d2q.field/resolver :myapp.resolvers/person-parents}
+    :d2q.field/cardinality :d2q.field.cardinality/many}
 
    {:d2q.field/name :myapp.person/children
     :doc "The biological children of this Person"
     :d2q.field/ref? true
-    :d2q.field/cardinality :d2q.field.cardinality/many
-    :d2q.field/resolver :myapp.resolvers/person-children}])
+    :d2q.field/cardinality :d2q.field.cardinality/many}])
 
 (defn resolve-person-fields
   [{:as qctx, :keys [db]} i+fcalls j+entities]
@@ -528,11 +517,18 @@
     {:d2q.server/fields fields
      :d2q.server/resolvers
      [{:d2q.resolver/name :myapp.resolvers/person-of-id
+       :d2q.resolver/field->meta {:myapp.persons/person-of-id nil}
        :d2q.resolver/compute #'resolve-persons-by-ids}
       {:d2q.resolver/name :myapp.resolvers/person-fields
+       :d2q.resolver/field->meta {:myapp.person/first-name nil,
+                                  :myapp.person/full-name nil,
+                                  :myapp.person/id nil,
+                                  :myapp.person/last-name nil}
        :d2q.resolver/compute #'resolve-person-fields}
       {:d2q.resolver/name :myapp.resolvers/person-parents
+       :d2q.resolver/field->meta {:myapp.person/father nil, :myapp.person/mother nil, :myapp.person/parents nil}
        :d2q.resolver/compute #'resolve-person-parents}
       {:d2q.resolver/name :myapp.resolvers/person-children
+       :d2q.resolver/field->meta {:myapp.person/children nil}
        :d2q.resolver/compute #'resolve-person-children}]}))
 

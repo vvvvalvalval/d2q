@@ -2,28 +2,38 @@
   (:require [clojure.test :refer :all]
             [midje.sweet :refer :all]
 
+            [d2q.test.test-utils :as tu]
             [d2q.api :as d2q :refer :all]
             [d2q.datatypes]
             [manifold.deferred :as mfd]
             [vvvvalvalval.supdate.api :as supd]))
 
-(defn dataify-ex
-  [^Throwable ex]
-  (let [cause (.getCause ex)]
-    (cond-> {:error/type (-> ex class .getName symbol)
-             :error/message (.getMessage ex)
-             :error/data (ex-data ex)}
-      (some? cause)
-      (assoc :error/cause (dataify-ex cause)))))
-
-(defn errors->ex-data
-  [res]
-  (update res :d2q-errors
-    #(->> %
-       (map dataify-ex)
-       (sort-by :error/message)
-       vec)))
-
+(fact "Errors in Fields <-> Resolvers mappings"
+  (try
+    (d2q/server
+      {:d2q.server/fields
+       [{:d2q.field/name :f1
+         :d2q.field/ref? false}
+        {:d2q.field/name :f2
+         :d2q.field/ref? false}
+        {:d2q.field/name :f3
+         :d2q.field/ref? false}]
+       :d2q.server/resolvers
+       [{:d2q.resolver/name :r1
+         :d2q.resolver/field->meta {:f1 nil
+                                    :f4 nil}
+         :d2q.resolver/compute (constantly nil)}
+        {:d2q.resolver/name :r2
+         :d2q.resolver/field->meta {:f1 nil
+                                    :f2 nil}
+         :d2q.resolver/compute (constantly nil)}]})
+    :should-have-thrown
+    (catch Throwable err
+      [(.getMessage err) (ex-data err)]))
+  => ["Each Field must be implemented by exactly one Resolver; found problems with Fields #{:f1 :f3 :f4} and Resolvers #{:r1 :r2}"
+      {:undeclared-fields #{:f4},
+       :non-implemented-fields #{:f3},
+       :fields-implemented-by-several-resolvers {:f1 [:r1 :r2]}}])
 
 ;; ------------------------------------------------------------------------------
 ;; Example with 'synthetic' fields - not representing a real-word domain, but useful for testing
@@ -83,7 +93,7 @@
         ]
        [[0 (->SynthEnt "a")]
         [1 (->SynthEnt "b")]])
-    errors->ex-data)
+    tu/errors->ex-data)
   =>
   '{:d2q-res-cells [#d2q/result-cell{:d2q-entcell-i 0, :d2q-fcall-i 0, :d2q-rescell-value "a"}
                     #d2q/result-cell{:d2q-entcell-i 1, :d2q-fcall-i 0, :d2q-rescell-value "b"}
@@ -123,83 +133,83 @@
           ]
          [])
 
-      errors->ex-data)
+      tu/errors->ex-data)
     => {:d2q-res-cells [], :d2q-errors []})
   )
 
 (def synthetic-fields
   [{:d2q.field/name :synth.fields/ent-id
-    :d2q.field/resolver :synth.resolvers/resolver-1
     :d2q.field/ref? false}
    {:d2q.field/name :synth.fields/always-42
-    :d2q.field/resolver :synth.resolvers/resolver-2
     :d2q.field/ref? false}
    {:d2q.field/name :synth.fields/return-arg
-    :d2q.field/resolver :synth.resolvers/resolver-1
     :d2q.field/ref? false}
    {:d2q.field/name :synth.fields/inc-arg
-    :d2q.field/resolver :synth.resolvers/resolver-2
     :d2q.field/ref? false}
    {:d2q.field/name :synth.fields/missing
-    :d2q.field/resolver :synth.resolvers/resolver-1
     :d2q.field/ref? false}
    {:d2q.field/name :synth.fields/throw-arg
-    :d2q.field/resolver :synth.resolvers/resolver-2
     :d2q.field/ref? false}
    {:d2q.field/name :synth.fields/qctx
-    :d2q.field/resolver :synth.resolvers/resolver-1
     :d2q.field/ref? false}
 
    {:d2q.field/name :synth.fields.refs/one-child
-    :d2q.field/resolver :synth.resolvers/resolver-1
     :d2q.field/ref? true
     :d2q.field/cardinality :d2q.field.cardinality/one}
    {:d2q.field/name :synth.fields.refs/one-missing
-    :d2q.field/resolver :synth.resolvers/resolver-2
     :d2q.field/ref? true
     :d2q.field/cardinality :d2q.field.cardinality/one}
    {:d2q.field/name :synth.fields.refs/one-throw-arg
-    :d2q.field/resolver :synth.resolvers/resolver-1
     :d2q.field/ref? true
     :d2q.field/cardinality :d2q.field.cardinality/one}
    {:d2q.field/name :synth.fields.refs/many-children
-    :d2q.field/resolver :synth.resolvers/resolver-2
     :d2q.field/ref? true
     :d2q.field/cardinality :d2q.field.cardinality/many}
    {:d2q.field/name :synth.fields.refs/many-missing
-    :d2q.field/resolver :synth.resolvers/resolver-1
     :d2q.field/ref? true
     :d2q.field/cardinality :d2q.field.cardinality/many}
    {:d2q.field/name :synth.fields.refs/many-throw-arg
-    :d2q.field/resolver :synth.resolvers/resolver-2
     :d2q.field/ref? true
     :d2q.field/cardinality :d2q.field.cardinality/many}
 
    {:d2q.field/name :synth.fields/resolver-throws
-    :d2q.field/resolver :synth.resolvers/throwing-resolver
     :d2q.field/ref? false}
    {:d2q.field/name :synth.fields/resolvers-returns-error
-    :d2q.field/resolver :synth.resolvers/error-returning-resolver
     :d2q.field/ref? false}
    {:d2q.field/name :synth.fields/resolver-deferred-error
-    :d2q.field/resolver :synth.resolvers/error-deferred-resolver
     :d2q.field/ref? false}
    ])
 
 (def synthetic-resolvers
   [{:d2q.resolver/name :synth.resolvers/resolver-1
+    :d2q.resolver/field->meta {:synth.fields/ent-id nil,
+                               :synth.fields/missing nil,
+                               :synth.fields/qctx nil,
+                               :synth.fields/return-arg nil,
+                               :synth.fields.refs/many-missing nil,
+                               :synth.fields.refs/one-child nil,
+                               :synth.fields.refs/one-throw-arg nil}
     :d2q.resolver/compute #'synthetic-resolve}
    {:d2q.resolver/name :synth.resolvers/resolver-2
+    :d2q.resolver/field->meta {:synth.fields/always-42 nil,
+                               :synth.fields/inc-arg nil,
+                               :synth.fields/throw-arg nil,
+                               :synth.fields.refs/many-children nil,
+                               :synth.fields.refs/many-throw-arg nil,
+                               :synth.fields.refs/one-missing nil}
     :d2q.resolver/compute #'synthetic-resolve}
    {:d2q.resolver/name :synth.resolvers/throwing-resolver
+    :d2q.resolver/field->meta {:synth.fields/resolver-throws nil}
     :d2q.resolver/compute
     (fn [qctx [[fcall-i {[msg data] :d2q-fcall-arg}]] i+ents]
       (throw (ex-info msg data)))}
    {:d2q.resolver/name :synth.resolvers/error-deferred-resolver
+    :d2q.resolver/field->meta {:synth.fields/resolver-deferred-error nil}
     :d2q.resolver/compute
     (fn [qctx [[fcall-i {[msg data] :d2q-fcall-arg}]] i+ents]
       (mfd/error-deferred (ex-info msg data)))}
    {:d2q.resolver/name :synth.resolvers/error-returning-resolver
+    :d2q.resolver/field->meta {:synth.fields/resolvers-returns-error nil}
     :d2q.resolver/compute
     (fn [qctx [[fcall-i {[msg data] :d2q-fcall-arg}]] i+ents]
       (mfd/success-deferred {:d2q-errors [(ex-info msg data)]}))}])
@@ -275,13 +285,13 @@
 
     (fact "Empty entities"
       (-> @(d2q.api/query (synth-server) qctx q [])
-        errors->ex-data)
+        tu/errors->ex-data)
       => {:d2q-results [] :d2q-errors []}
       )
 
     (fact "Empty query"
       (-> @(d2q.api/query (synth-server) qctx [] ents)
-        errors->ex-data)
+        tu/errors->ex-data)
       => '{:d2q-results [{} {}],
            :d2q-errors [{:error/type clojure.lang.ExceptionInfo,
                          :error/message "Error in d2q Transform-Entities phase.",
@@ -298,7 +308,7 @@
     ;; FIXME fix tests for new error reporting (Val, 10 Apr 2018)
 
     (-> @(d2q.api/query (synth-server) qctx q ents)
-      errors->ex-data))
+      tu/errors->ex-data))
   =>
   '{:d2q-results [{:synth.fields/ent-id 0,
                    "scalar-k0" "HI",
@@ -422,60 +432,4 @@
                   :error/cause {:error/type clojure.lang.ExceptionInfo, :error/message "jfdksl", :error/data {:x 34242}}}]}
 
 
-  )
-
-
-(fact "into-resolver-result"
-  (fact "with transducer"
-    (->
-      (d2q.api/into-resolver-result
-        (map-indexed
-          (fn [ent-i n]
-            (try
-              (d2q.api/result-cell ent-i 0
-                (/ 1 n))
-              (catch Throwable err
-                (ex-info "aaaaaarrrrg"
-                  {:n n}
-                  err)))))
-        (range -2 3))
-      errors->ex-data)
-
-    =>
-    '{:d2q-res-cells [#d2q/result-cell{:d2q-entcell-i 0, :d2q-fcall-i 0, :d2q-rescell-value -1/2}
-                      #d2q/result-cell{:d2q-entcell-i 1, :d2q-fcall-i 0, :d2q-rescell-value -1}
-                      #d2q/result-cell{:d2q-entcell-i 3, :d2q-fcall-i 0, :d2q-rescell-value 1}
-                      #d2q/result-cell{:d2q-entcell-i 4, :d2q-fcall-i 0, :d2q-rescell-value 1/2}],
-      :d2q-errors [{:error/type clojure.lang.ExceptionInfo,
-                    :error/message "aaaaaarrrrg",
-                    :error/data {:n 0},
-                    :error/cause {:error/type java.lang.ArithmeticException,
-                                  :error/message "Divide by zero",
-                                  :error/data nil}}]})
-
-  (fact "without transducer"
-    (->
-      (d2q.api/into-resolver-result
-        (map-indexed
-          (fn [ent-i n]
-            (try
-              (d2q.api/result-cell ent-i 0
-                (/ 1 n))
-              (catch Throwable err
-                (ex-info "aaaaaarrrrg"
-                  {:n n}
-                  err))))
-          (range -2 3)))
-      errors->ex-data)
-    =>
-    '{:d2q-res-cells [#d2q/result-cell{:d2q-entcell-i 0, :d2q-fcall-i 0, :d2q-rescell-value -1/2}
-                      #d2q/result-cell{:d2q-entcell-i 1, :d2q-fcall-i 0, :d2q-rescell-value -1}
-                      #d2q/result-cell{:d2q-entcell-i 3, :d2q-fcall-i 0, :d2q-rescell-value 1}
-                      #d2q/result-cell{:d2q-entcell-i 4, :d2q-fcall-i 0, :d2q-rescell-value 1/2}],
-      :d2q-errors [{:error/type clojure.lang.ExceptionInfo,
-                    :error/message "aaaaaarrrrg",
-                    :error/data {:n 0},
-                    :error/cause {:error/type java.lang.ArithmeticException,
-                                  :error/message "Divide by zero",
-                                  :error/data nil}}]})
   )

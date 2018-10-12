@@ -54,7 +54,6 @@
   * a Field is either scalar-typed (`:d2q.field/ref? false`) or ref-typed (`:d2q.field/ref? true`),
   * a ref-typed Field can be cardinality-one (`:d2q.field/cardinality :d2q.field.cardinality/one`)
    or cardinality-many (`:d2q.field/cardinality :d2q.field.cardinality/many`)
-  * a Field has a Resolver (:d2q.field/resolver) which knows how to compute it.
 
   Scalar-typed Fields evaluate to the terminal values which will appear in the d2q Query Result, whereas
   ref-typed Fields evaluate to other Entities, which will then be further processed by the query engine.
@@ -71,6 +70,7 @@
   ## About Resolvers:
 
   d2q Resolvers are essentially named (:d2q.resolver/name) functions (:d2q.resolver/compute),
+  dedicated to a set of d2q Fields (:d2q.resolver/field->meta),
   which asynchronously compute a (potentially sparse) table of requested data:
   given a Query Context, a list of M Field Calls, and a batch of N entities (called an Entity Selection),
   a Resolver will compute up to MxN Result Cells, where each Result Cell represents the value taken
@@ -78,11 +78,17 @@
 
   In a pseudo type notation, the signature of a :d2q.resolver/compute function would be:
 
-  (QCtx, [[FieldCallIndex, FieldCall]], [[EntityIndex, Entity]])
+  (QCtx, [[FieldCallIndex, FieldCall, FieldMeta]], [[EntityIndex, Entity]])
   -> manifold.Deferred<{:d2q-res-cells  [{:d2q-entcell-i     EntityIndex,
                                           :d2q-fcall-i       FieldCallIndex,
                                           :d2q-rescell-value V}],
                         :d2q-errors     [Throwable]}>
+
+  :d2q.resolver/field->meta must be a map, which keys are the names (:d2q.field/name) of the Fields
+  that the Resolver knows how to compute, and the values are optional metadata, which as a convenience
+  for implementing resolvers are passed to the resolver functions alongside with the Field Calls: here
+  you can put any Field-specific configuration to help you resolve it. Each Field must be computed by
+  exactly one Resolver.
 
   Notes:
 
@@ -139,28 +145,6 @@
          (integer? d2q-fcall-i)]}
   (d2q.datatypes/->ResultCell d2q-entcell-i d2q-fcall-i d2q-rescell-value))
 
-
-(defn into-resolver-result
-  "Transforms a sequence which elements are either d2q Result Cells or errors into a proper d2q Resolver Result map.
-  Useful for constructing Resolver Results by processing entities sequentially.
-
-  An optional transducer may be supplied, which must transform inputs to Result Cells or errors.
-
-  A value `v` is considered an error when `(instance? Throwable v)` is true."
-  ([rcells-or-errors]
-    (into-resolver-result identity rcells-or-errors))
-  ([xform xs]
-    (let [^ArrayList l-errs (ArrayList.)
-          rcells (into []
-                   (comp
-                     xform
-                     (remove (fn [v]
-                               (when (instance? Throwable v)
-                                 (.add l-errs v)
-                                 true))))
-                   xs)]
-      {:d2q-res-cells rcells
-       :d2q-errors (vec l-errs)})))
 
 
 
