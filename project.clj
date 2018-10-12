@@ -1,5 +1,5 @@
 (defproject vvvvalvalval/d2q "0.0.1-SNAPSHOT"
-  :description "An expressive toolkit for building efficient GraphQL-like query servers"
+  :description "An expressive, efficient, generally applicable engine for implementing graph-pulling API servers in Clojure."
   :url "https://github.com/vvvvalvalval/d2q"
   :license {:name "MIT License"
             :url "https://opensource.org/licenses/MIT"}
