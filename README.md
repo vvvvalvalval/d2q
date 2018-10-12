@@ -63,15 +63,7 @@ A **functional, performance-friendly backend API:**
 ## Usage
 
 * [Tutorial in examples](./test/d2q/test/example/persons.clj)
-FIXME d2q-examples
-
-## Comparison to other libraries
-
-FIXME
-
-## Rationale
-
-FIXME
+* [Examples projects](https://github.com/vvvvalvalval/d2q-examples)
 
 ## License
 
