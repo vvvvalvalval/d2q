@@ -120,7 +120,7 @@
 ;;;; Normalized query form
 
 ;; The query syntax that we used above is actually a shorthand syntax
-;; for a more verbosed 'normalized' form.
+;; for a more verbose 'normalized' form.
 
 ;; The above query is equivalent to this query in normalized form:
 
@@ -526,7 +526,7 @@
        (for [[ent-i person-entity] j+entities
              :let [person-id (:person-id person-entity)
                    person-row (get (:myapp.db/persons-by-id db) person-id)]
-             :when (some? person-id)
+             :when (some? person-row)
              :let [father-id (:myapp.person/father-id person-row)
                    mother-id (:myapp.person/mother-id person-row)]
              [fcall-i fcall] i+fcalls
