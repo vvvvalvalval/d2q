@@ -1,5 +1,7 @@
 # d2q
 
+[![Clojars Project](https://img.shields.io/clojars/v/vvvvalvalval/d2q.svg)](https://clojars.org/vvvvalvalval/d2q)
+
 A simple, efficient, generally applicable engine for implementing graph-pulling API servers in Clojure. 
 
 **Project status: alpha, subject to change.** The core algorithm has been running in production for several months now,
