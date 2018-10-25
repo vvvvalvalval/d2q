@@ -1,17 +1,24 @@
 (ns d2q.test.example.persons
   (:require [d2q.api :as d2q]
-            [manifold.deferred :as mfd]
-            [midje.sweet :refer :all]))
+            [manifold.deferred :as mfd]))
+
+;; A tutorial demonstrating basic usage of d2q.
+
+;; Table of Contents:
+;; 1. DOMAIN
+;; 2. QUERYING
+;; 3. DEFINING AND IMPLEMENTING THE SERVER
 
 ;; If you want to experiment with the examples at the REPL,
 ;; start by loading this entire file in the REPL,
+;; (for instance with the command: clj -i test/d2q/test/example/persons.clj -e "(in-ns 'd2q.test.example.persons)"  -r)
 ;; then you can evaluate the forms in the (comment ...) blocks.
 
 ;;;; ****************************************************************
-;;;; DOMAIN
+;;;; 1. DOMAIN
 ;;;; ****************************************************************
 
-;; Our domain consists of persons, their names, and family bonds.
+;; Our example domain consists of persons, their names, and family bonds.
 
 ;; We will use the following 'database' data structure to support
 ;; the data for our examples:
@@ -58,9 +65,10 @@
   :myapp.person/children}
 
 ;;;; ****************************************************************
-;;;; QUERYING
+;;;; 2. QUERYING
 ;;;; ****************************************************************
 
+;;;; ----------------------------------------------------------------
 ;;;; Calling the query server
 
 ;; We assume we have already implemented a d2q Query Server for our domain.
@@ -108,6 +116,7 @@
   ;; with the appropriate inputs and assembled the outputs into a tree data structure.
   )
 
+;;;; ----------------------------------------------------------------
 ;;;; Normalized query form
 
 ;; The query syntax that we used above is actually a shorthand syntax
@@ -261,7 +270,17 @@
   ;; omitting it would expose us to collisions, and make little sense.
   )
 
-;; From the above examples, it has become clear that there are several
+;;;; ****************************************************************
+;;;; 3. DEFINING AND IMPLEMENTING THE SERVER
+;;;; ****************************************************************
+
+;;;; ----------------------------------------------------------------
+;;;; The schema
+
+;; Here we declare formally in a _schema_ what Fields can be computed by our Query Server;
+;; note that we do not declare _how_ they are computed.
+
+;; From the above query examples, it has become clear that there are several
 ;; sorts of Fields:
 ;; - Some Fields are _parameterized_, i.e they use their argument (example: :myapp.persons/person-of-id),
 ;; whereas others ignore their argument (examples: :myapp.person/first-name, :myapp.person/father)
@@ -274,19 +293,7 @@
 ;; whereas others are cardinality-many, i.e they navigate to an order list of Entities
 ;; (example: :myapp.person/parents, :myapp.person/children)
 
-;; These aspects of Fields are exactly what we specified in our `fields` schema above.
-
-;; Some notes:
-;; 1. It makes no sense for a scalar-typed Field to be called with a :d2q-fcall-subquery.
-;; 2. For scalar-typed Field, the notion of cardinality makes no sense:
-;; a scalar-typed Field may compute any type of values (including maps or vectors),
-;; and the d2q engine won't care.
-
-
-;;;; ****************************************************************
-;;;; DEFINING AND IMPLEMENTING THE SERVER
-;;;; ****************************************************************
-
+;; These aspects of Fields are exactly what we specify in our `fields` schema below:
 
 (def fields
   [;; NOTE this Field is ref-typed, cardinality-one, and parameterized
@@ -328,47 +335,144 @@
     :d2q.field/ref? true
     :d2q.field/cardinality :d2q.field.cardinality/many}])
 
-(defn resolve-person-fields
-  [{:as qctx, :keys [db]} i+fcalls j+entities]
-  (mfd/future
-    {:d2q-res-cells
-     (vec
-       (for [[ent-i person-entity] j+entities
-             :let [person-id (:person-id person-entity)
-                   person-row (get (:myapp.db/persons-by-id db) person-id)]
-             :when (some? person-id)
-             [fcall-i fcall] i+fcalls
-             :let [field-name (:d2q-fcall-field fcall)
-                   v (if (= field-name :myapp.person/full-name)
-                       (str (:myapp.person/first-name person-row) " " (:myapp.person/last-name person-row))
-                       (get person-row field-name))]
-             :when (some? v)]
-         (d2q/result-cell ent-i fcall-i v)))}))
 
+;; Some notes:
+;; 1. It makes no sense for a scalar-typed Field to be called with a :d2q-fcall-subquery.
+;; 2. For scalar-typed Field, the notion of cardinality makes no sense:
+;; a scalar-typed Field may compute any type of values (including maps or vectors),
+;; and the d2q engine won't care.
+
+;;;; ----------------------------------------------------------------
+;;;; Creating the d2q Server
+
+;; To implement our query Server, we need to declare:
+;; - What Fields can be computed (:d2q.server/fields): that's our `fields` schema above
+;; - How these Fields are computed. Fields are computed by d2q _Resolvers_:
+;; each Resolver is responsible for computing a subset of the Fields.
+;; The work of fetching / computing the data is done by the _Resolver Function_ of the Resolver.
+
+;; These are our Resolver Functions (will be implemented below).
+(declare
+  resolve-persons-by-ids
+  resolve-person-fields
+  resolve-person-parents
+  resolve-person-children)
+
+;; Creating the Server
+(def app-server
+  (d2q/server
+    {:d2q.server/fields fields
+     :d2q.server/resolvers
+     [{:d2q.resolver/name :myapp.resolvers/person-of-id
+       :d2q.resolver/field->meta {:myapp.persons/person-of-id nil}
+       :d2q.resolver/compute #'resolve-persons-by-ids}      ;; NOTE: we pass our Resolver Functions as Clojure Vars (using the #' syntax) so that we can redefine the functions interactively at the REPL.
+      ;;;; ----------------------------------------------------------------
+      ;;;; Anatomy of a d2q Resolver:
+      {
+       ;; A Resolver has a name, described in :d2q.resolver/name :
+       :d2q.resolver/name :myapp.resolvers/person-fields
+       ;; A Resolver knows how to compute a set of Fields, described in :d2q.resolver/field->meta
+       ;; Note: each Field can have _metadata_ associated with it by the Resolver, which will be passed as a convenience to the Resolver Function.
+       ;; In the :d2q.resolver/field->meta map, the keys are Fields, and the values are Field metadata.
+       :d2q.resolver/field->meta {:myapp.person/first-name nil, ;; for our basic example, the metadata is always nil
+                                  :myapp.person/full-name nil,
+                                  :myapp.person/id nil,
+                                  :myapp.person/last-name nil}
+       ;; A Resolver has a Resolver Function, defined in :d2q.resolver/compute
+       :d2q.resolver/compute #'resolve-person-fields}
+      ;;;; ----------------------------------------------------------------
+      {:d2q.resolver/name :myapp.resolvers/person-parents
+       :d2q.resolver/field->meta {:myapp.person/father nil, :myapp.person/mother nil, :myapp.person/parents nil}
+       :d2q.resolver/compute #'resolve-person-parents}
+      {:d2q.resolver/name :myapp.resolvers/person-children
+       :d2q.resolver/field->meta {:myapp.person/children nil}
+       :d2q.resolver/compute #'resolve-person-children}]}))
+
+;;;; ----------------------------------------------------------------
+;;;; Implementing the Resolver Functions
+
+;; A Resolver Function essentially receives a batch of Field Calls to apply to a batch of Entities,
+;; and returns the corresponding values.
+;; You can think of this as filling a table, in which the columns are the Field Calls, and the rows
+;; are the Entities; the job of the Resolver Function is to return the cells of the (potentially sparse) table.
+
+;; More concretely:
+;;
+;; A Resolver Function receives as arguments:
+;; * a Query Context `qctx` (see the query examples in the previous section)
+;; * a sequence of 'Field Call tuples' `i+fcall+metas`: each element in this sequence is a 3-sized tuple, containing:
+;;    1. A 'Field Call index': an integer identifying our Field Call
+;;    2. The Field Call itself
+;;    3. The Field Metadata (associated with the Field by the Resolver)
+;; * a sequence of 'Entity Cell tuples' `j+entities`: each element in this sequence is a 2-sized tuple, containing:
+;;    1. An 'Entity Cell Index': an integer identifying our Entity
+;;    2. The Entity itself
+;;
+;; The Resolver function returns, wrapped in a Manifold Deferred, a map containing _Result Cells_;
+;; each Result Cell provides the value computed for one Field Call on one Entity. A Result cell
+;; is a map containing:
+;; * The Entity Cell Index (:d2q-entcell-j)
+;; * The Field Call Index (:d2q-fcall-i)
+;; * The resolved value (:d2q-rescell-value)
+
+;; Here's an example of how a Resolver Function gets called:
 (comment "Example of" resolve-person-fields ":"
-  (let [qctx {:db app-db}
-        i+fcalls
-        [[-1 {:d2q-fcall-field :myapp.person/id}]
-         [-2 {:d2q-fcall-field :myapp.person/first-name}]
-         [-3 {:d2q-fcall-field :myapp.person/last-name}]
-         [-4 {:d2q-fcall-field :myapp.person/full-name}]]
+  (let [;;;; Inputs:
+        ;; The Query Context
+        qctx {:db app-db}
+        ;; The Field Call tuples
+        i+fcall+metas
+        [[-1                                                ;; the Field Call Index (:d2q-fcall-i)
+          {:d2q-fcall-field :myapp.person/id}               ;; the Field Call
+          nil                                               ;; the Field metadata
+          ]
+         [-2 {:d2q-fcall-field :myapp.person/first-name} nil]
+         [-3 {:d2q-fcall-field :myapp.person/last-name} nil]
+         [-4 {:d2q-fcall-field :myapp.person/full-name} nil]]
+        ;; The Entity Cell tuples
         j+entities
-        [[1 (->Person "luke-skywalker")]
+        [[1                                                 ;; The Entity Cell Index (:d2q-entcell-j)
+          (->Person "luke-skywalker")                       ;; The Entity itself
+          ]
          [2 (->Person "padme-amidala")]
          [3 (->Person "non-existing-person")]]]
-    @(resolve-person-fields qctx i+fcalls j+entities))
-  =>
-  {:d2q-res-cells [#d2q/result-cell{:d2q-entcell-j 1, :d2q-fcall-i -1, :d2q-rescell-value "luke-skywalker"}
+    @(resolve-person-fields qctx i+fcall+metas j+entities)) ;; Mind the '@': we're returning a Manifold Deferred, which we dereference with @
+  => ;;;; Output:
+  {:d2q-res-cells [#d2q/result-cell{:d2q-entcell-j 1,       ;; the Entity Cell Index
+                                    :d2q-fcall-i -1,        ;; the Field Call Index
+                                    :d2q-rescell-value "luke-skywalker" ;; the computed value
+                                    }
                    #d2q/result-cell{:d2q-entcell-j 1, :d2q-fcall-i -2, :d2q-rescell-value "Luke"}
                    #d2q/result-cell{:d2q-entcell-j 1, :d2q-fcall-i -3, :d2q-rescell-value "Skywalker"}
                    #d2q/result-cell{:d2q-entcell-j 1, :d2q-fcall-i -4, :d2q-rescell-value "Luke Skywalker"}
                    #d2q/result-cell{:d2q-entcell-j 2, :d2q-fcall-i -1, :d2q-rescell-value "padme-amidala"}
                    #d2q/result-cell{:d2q-entcell-j 2, :d2q-fcall-i -2, :d2q-rescell-value "Padme"}
                    #d2q/result-cell{:d2q-entcell-j 2, :d2q-fcall-i -3, :d2q-rescell-value "Amidala"}
-                   #d2q/result-cell{:d2q-entcell-j 2, :d2q-fcall-i -4, :d2q-rescell-value "Padme Amidala"}
-                   #d2q/result-cell{:d2q-entcell-j 3, :d2q-fcall-i -4, :d2q-rescell-value " "}]}
+                   #d2q/result-cell{:d2q-entcell-j 2, :d2q-fcall-i -4, :d2q-rescell-value "Padme Amidala"}]}
   )
 
+;; Here's how this Resolver Function may be implemented:
+(defn resolve-person-fields
+  [{:as qctx, :keys [db]} i+fcall+metas j+entities]
+  (mfd/future
+    {:d2q-res-cells
+     (vec
+       (for [[ent-i person-entity] j+entities
+             :when (contains? person-entity :person-id)     ;; ignoring Entities which are not Persons
+             :let [person-id (:person-id person-entity)
+                   person-row (get (:myapp.db/persons-by-id db) person-id)]
+             :when (some? person-row)                       ;; ignoring Persons with non-existent ids (we could also return an Exception for this)
+             [fcall-i fcall _field-meta] i+fcall+metas
+             :let [field-name (:d2q-fcall-field fcall)
+                   v (case field-name
+                       :myapp.person/full-name
+                       (str (:myapp.person/first-name person-row) " " (:myapp.person/last-name person-row))
+
+                       (get person-row field-name))]
+             :when (some? v)]
+         (d2q/result-cell ent-i fcall-i v)))}))
+
+;; Following are the implementations of the other Resolver Functions:
 
 (defn resolve-persons-by-ids
   [{:as qctx, :keys [db]} i+fcalls j+entities]
@@ -384,18 +488,21 @@
 
 (comment "Example of" resolve-persons-by-ids ":"
   (let [qctx {:db app-db}
-        i+fcalls
+        i+fcall+metas
         [[-1 {:d2q-fcall-field :myapp.persons/person-of-id
-              :d2q-fcall-arg {:myapp.person/id "luke-skywalker"}}]
+              :d2q-fcall-arg {:myapp.person/id "luke-skywalker"}}
+          nil]
          [-2 {:d2q-fcall-field :myapp.persons/person-of-id
-              :d2q-fcall-arg {:myapp.person/id "leia-organa"}}]
+              :d2q-fcall-arg {:myapp.person/id "leia-organa"}}
+          nil]
          [-3 {:d2q-fcall-field :myapp.persons/person-of-id
-              :d2q-fcall-arg {:myapp.person/id "non-existing-id"}}]]
+              :d2q-fcall-arg {:myapp.person/id "non-existing-id"}}
+          nil]]
         j+entities
         [[1 nil]
          [2 nil]]]
     @(resolve-persons-by-ids
-       qctx i+fcalls j+entities))
+       qctx i+fcall+metas j+entities))
   =>
   {:d2q-res-cells [#d2q/result-cell{:d2q-entcell-j 1,
                                     :d2q-fcall-i -1,
@@ -444,14 +551,14 @@
 
 (comment "Example of" resolve-person-parents ":"
   (let [qctx {:db app-db}
-        i+fcalls
-        [[-1 {:d2q-fcall-field :myapp.person/mother}]
-         [-2 {:d2q-fcall-field :myapp.person/father}]
-         [-3 {:d2q-fcall-field :myapp.person/parents}]]
+        i+fcall+metas
+        [[-1 {:d2q-fcall-field :myapp.person/mother} nil]
+         [-2 {:d2q-fcall-field :myapp.person/father} nil]
+         [-3 {:d2q-fcall-field :myapp.person/parents} nil]]
         j+entities
         [[1 (->Person "luke-skywalker")]
          [2 (->Person "anakin-skywalker")]]]        ;; NOTE has no parents in our DB
-    @(resolve-person-parents qctx i+fcalls j+entities))
+    @(resolve-person-parents qctx i+fcall+metas j+entities))
   =>
   {:d2q-res-cells [#d2q/result-cell{:d2q-entcell-j 1,
                                     :d2q-fcall-i -1,
@@ -494,12 +601,12 @@
 (comment "Example of" resolve-person-children ":"
   (let [qctx
         {:db app-db}
-        i+fcalls
-        [[-1 {:d2q-fcall-field :myapp.person/children}]]
+        i+fcall+metas
+        [[-1 {:d2q-fcall-field :myapp.person/children} nil]]
         j+entities
         [[1 (->Person "luke-skywalker")]          ;; NOTE has no children in our DB
          [2 (->Person "anakin-skywalker")]]]
-    @(resolve-person-children qctx i+fcalls j+entities))
+    @(resolve-person-children qctx i+fcall+metas j+entities))
   =>
   {:d2q-res-cells [#d2q/result-cell{:d2q-entcell-j 1,
                                     :d2q-fcall-i -1,
@@ -510,25 +617,4 @@
                                                         #d2q.test.example.persons.Person{:person-id "leia-organa"}]}]}
   )
 
-;;;; putting it all together
-
-(def app-server
-  (d2q/server
-    {:d2q.server/fields fields
-     :d2q.server/resolvers
-     [{:d2q.resolver/name :myapp.resolvers/person-of-id
-       :d2q.resolver/field->meta {:myapp.persons/person-of-id nil}
-       :d2q.resolver/compute #'resolve-persons-by-ids}
-      {:d2q.resolver/name :myapp.resolvers/person-fields
-       :d2q.resolver/field->meta {:myapp.person/first-name nil,
-                                  :myapp.person/full-name nil,
-                                  :myapp.person/id nil,
-                                  :myapp.person/last-name nil}
-       :d2q.resolver/compute #'resolve-person-fields}
-      {:d2q.resolver/name :myapp.resolvers/person-parents
-       :d2q.resolver/field->meta {:myapp.person/father nil, :myapp.person/mother nil, :myapp.person/parents nil}
-       :d2q.resolver/compute #'resolve-person-parents}
-      {:d2q.resolver/name :myapp.resolvers/person-children
-       :d2q.resolver/field->meta {:myapp.person/children nil}
-       :d2q.resolver/compute #'resolve-person-children}]}))
 
