@@ -1,4 +1,4 @@
-(defproject vvvvalvalval/d2q "0.0.1-SNAPSHOT"
+(defproject vvvvalvalval/d2q "0.1.0"
   :description "An expressive, efficient, generally applicable engine for implementing graph-pulling API servers in Clojure."
   :url "https://github.com/vvvvalvalval/d2q"
   :license {:name "MIT License"
