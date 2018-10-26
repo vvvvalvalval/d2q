@@ -15,7 +15,7 @@ A simple, efficient, generally applicable engine for implementing graph-pulling 
  in the Clojure ecosystem, especially regarding their performance characteristics (N+1 problem),
  genericity, programmability or simplicity.
 
-It does so by providing by providing an execution engine for a **general, data-oriented query language,**
+It does so by providing an execution engine for a **general, data-oriented query language,**
  which allows for registering data-fetching logic in a way that is declarative,
  expressive, and friendly to performance.
 
