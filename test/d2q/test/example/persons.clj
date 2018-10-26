@@ -186,7 +186,7 @@
 ;; where each Field Call consists of
 ;; - a Field (:d2q-fcall-field),
 ;; - an optional key (:d2q-fcall-key),
-;; - an optional argument (:d2q-fcall-key).
+;; - an optional argument (:d2q-fcall-arg).
 
 ;; For certain Fields (called ref-typed Fields), it is possible (and encouraged)
 ;; to nest another Query under Field Calls.
