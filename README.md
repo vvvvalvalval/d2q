@@ -115,7 +115,6 @@ You could imagine leveraging Datomic Pull from d2q, using d2q's _early results s
  encoding library.
 * Batching and asynchronous resolution exist but are somewhat of an afterthought in Pathom's API; d2q promotes batching and asynchronous resolvers
  as the fundamental building blocks, which makes the API more regular in my opinion. 
-* Pathom provides mutations for writing; d2q only cares about reading.
 * Pathom implements resolvers as 'deductive rules' for enriching a 'context' represented as a map. This makes Pathom more opinionated,
  and its algorithm less intuitive, than I want d2q to be; in d2q, entities can be represented by anything, and resolvers receive entities 
  in a constant form.
