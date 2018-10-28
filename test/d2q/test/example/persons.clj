@@ -52,7 +52,7 @@
 ;; or ElasticSearch.
 
 ;; We will build a d2q Query Server which serves the following Fields,
-;; which names should be most self-explanatory:
+;; which names should be mostly self-explanatory:
 
 #{:myapp.persons/person-of-id
   :myapp.person/id
@@ -237,7 +237,7 @@
   )
 
 ;; Some Fields require an _argument_ when they are called.
-;; As an example, let's write a query which find persons by their ids:
+;; As an example, let's write a query which finds persons by their id:
 
 (comment "calling a Field with an argument:"
   (let [qctx {:db app-db}
@@ -264,10 +264,10 @@
   ;; Notes:
   ;; - (1) The Field :myapp.persons/person-of-id expects an argument
   ;; of the form {:myapp.person/id PERSON-ID}
-  ;; - (2) In this case, the Entity on which we call :myapp.persons/person-of-id plays no role;
-  ;; so we can just define it to be nil.
-  ;; - (3) In this case, it is essential to supply an explicit :d2q-fcall-key:
+  ;; - (2) In this case, it is essential to supply an explicit :d2q-fcall-key:
   ;; omitting it would expose us to collisions, and make little sense.
+  ;; - (3) In this case, the Entity on which we call :myapp.persons/person-of-id plays no role;
+  ;; so we can just define it to be nil.
   )
 
 ;;;; ****************************************************************
